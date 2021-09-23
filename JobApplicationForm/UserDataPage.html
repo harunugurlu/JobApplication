@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=UTF-8>
+        <title>Candidate Data</title>
+    </head>
+    <style>
+        tr, th, td {
+            border:3px solid rgb(179, 7, 7);
+            padding: 0.2cm;
+            align-content: center;
+            
+        }
+    </style>
+    <body>
+        
+
+
+
+        <table style="width:100%" id="dataTable">
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Birthdate</th>
+                <th>Experience</th>
+                <th>Salary Expectation</th>
+                <th>Additional Expectations</th>
+            </tr>
+            <tr>
+                <td>Harun</td>
+                <td>Ugurlu</td>
+                <td>01.03.2001</td>
+                <td>None</td>
+                <td>2800</td>
+                <td>None</td>
+            </tr>
+        </table>
+        
+        <script>
+           
+            (function () {
+                fetch("http://localhost:5000/api/userdata")
+                .then(response => response.json())
+                .then(response => {
+                   
+                    
+                    console.log(response);
+                    var table = document.getElementById("dataTable");
+                    var br = document.createElement("br");
+                    //Clear the table rows
+                    // let i = table.rows.length;
+                    // for (let index = 1; index < i; index++) {
+                    //     table.deleteRow(index); 
+                    // }
+                    
+                    //Insert the data
+                    // for (const dataText of data) {
+                    //     const dataElement = document.createElement("td")
+                    // }
+                    
+                    //var row = table.insertRow();
+                    //console.log(row);
+                    
+                    console.log(response.value);
+                    response.value.forEach(element => {
+                        var row = table.insertRow();
+                        var cellFName = row.insertCell();
+                        var cellLName = row.insertCell();
+                        var cellBDate = row.insertCell();
+                        var cellExperience = row.insertCell();
+                        var cellSalary = row.insertCell();
+                        var cellAdditional = row.insertCell();
+                        console.log(element);
+
+                        cellFName.innerHTML = element.personalInfo.fName;
+                        cellLName.innerHTML = element.personalInfo.lName;
+                        const bDate = new Date(Date.parse(element.personalInfo.bDate));
+                        const birthDate = bDate.toLocaleDateString();
+                        cellBDate.innerHTML = birthDate;
+                       
+                        element.experiences.forEach(element => {
+                            if(element.endYear != 0){
+                                var endYear = element.endYear;
+                            }
+                            else{
+                                var endYear = "?";
+                            }
+                            var expText = document.createTextNode(element.companyName + " " + "(" + element.startYear +
+                                 "-" + endYear + ")")
+                            cellExperience.appendChild(br);
+                            cellExperience.appendChild(expText);
+                        })
+                       
+                        
+                        cellSalary.innerHTML = element.expectations.salary;
+                        if(element.expectations.additionalExp != "")
+                        cellAdditional.innerHTML = element.expectations.additionalExp;
+                        else
+                        cellAdditional.innerHTML = "No additional expectations";
+                    });
+                    
+                    
+
+                    
+                    
+                })
+                .catch(e => console.log(e))
+            })();
+
+        </script>
+    </body>
+</html>
