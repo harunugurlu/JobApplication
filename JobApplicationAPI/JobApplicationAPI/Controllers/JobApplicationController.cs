@@ -31,14 +31,14 @@ namespace JobApplicationAPI.Controllers
             con.Open();
             SqlDataReader rdr = cmd.ExecuteReader();
             Console.WriteLine(rdr.FieldCount);
-            UserData user = new UserData();
+            CacheData user = new CacheData();
+            user.value = new List<UserData>();
+            UserData info = new UserData();
+            
             while (rdr.Read())
             {
                 ReadSingleRow(rdr, user);
-            }
-
-            rdr.GetSchemaTable();
-            
+            }            
             CacheData data = new CacheData();
             
             if(!_cache.TryGetValue("userdata", out data))
@@ -54,12 +54,62 @@ namespace JobApplicationAPI.Controllers
         public void ReadSingleRow(IDataRecord record, CacheData userData)
         {
             
-                        
+           
+            List<IDataRecord> values1 = new List<IDataRecord>();
             string[] values = new string[record.FieldCount];
             for (int i = 0; i < record.FieldCount; i++)
             {
                 values[i] = record[i].ToString();
             }
+         
+            var userId = Convert.ToInt32(values[0]); 
+            var user = userData.value.FirstOrDefault(x => x.UserId == userId); 
+
+            if(user != null)
+            {
+                user.UserId = userId;
+                user.PersonalInfo.FName = values[1];
+                user.PersonalInfo.LName = values[2];
+                user.PersonalInfo.BDate = Convert.ToDateTime(values[3]);
+                user.Experiences.Add(new Experiences
+                {
+                    CompanyName = values[4],
+                    StartYear = Convert.ToInt32(values[5]),
+                    EndYear = Convert.ToInt32(values[6])
+                });
+                user.Expectations.Salary = Convert.ToInt32(values[7]);
+                user.Expectations.AdditionalExp = values[8];
+            }
+            else
+            {
+                
+                userData.value.Add(new UserData
+                {
+                    UserId = userId,
+                    PersonalInfo = new PersonalInfo
+                    {
+                        FName = values[1],
+                        LName = values[2],
+                        BDate = Convert.ToDateTime(values[3])
+                    },
+                    Experiences = new List<Experiences>()
+                    {
+                        new Experiences
+                        {
+                            CompanyName = values[4],
+                            StartYear = Convert.ToInt32(values[5]),
+                            EndYear = Convert.ToInt32(values[6])
+                        }
+                    },
+                    Expectations = new Expectations
+                    {
+                        Salary = Convert.ToInt32(values[7]),
+                        AdditionalExp = values[8]
+                    }
+
+                }) ; 
+            }
+
             int[] arr = new int[record.FieldCount];
             for (int i = 0; i < record.FieldCount; i++)
             {
