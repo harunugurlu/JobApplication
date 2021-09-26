@@ -129,15 +129,8 @@ namespace JobApplicationAPI.Controllers
             CacheData data;
 
 
-           
-
-                data = new CacheData();
-                data.value = new List<UserData>();
-                data.value.Add(userData);
-                _cache.Set("userdata", data);
 
                 
-                userData.Experiences = new List<Experiences>();
                 SqlConnection con = new SqlConnection("Server=localhost; Database=JobApplicationDb; Integrated Security=true");
                 con.Open();
                 string strCommandPersonalInfo = "INSERT INTO personal_info([First Name], [Last Name], [Birth Date])" +
