@@ -127,26 +127,68 @@ namespace JobApplicationAPI.Controllers
         public IActionResult PostUserData([FromBody] UserData userData)
         {
             CacheData data;
-            
-            
-            bool AlreadyExist = _cache.TryGetValue("userdata", out data);
-            if (!AlreadyExist)
-            {
-                
+
+
+           
+
                 data = new CacheData();
                 data.value = new List<UserData>();
                 data.value.Add(userData);
                 _cache.Set("userdata", data);
+
+                
+                userData.Experiences = new List<Experiences>();
+                SqlConnection con = new SqlConnection("Server=localhost; Database=JobApplicationDb; Integrated Security=true");
+                con.Open();
+                string strCommandPersonalInfo = "INSERT INTO personal_info([First Name], [Last Name], [Birth Date])" +
+                    "VALUES (" + "'"+userData.PersonalInfo.FName+"'" + ", " + "'" + userData.PersonalInfo.LName+ "'" + ", " 
+                    +"'"+userData.PersonalInfo.BDate + "'" + ")";
+                
+                SqlCommand cmdPersonalInfo = new SqlCommand(strCommandPersonalInfo,con);
+                SqlDataReader rdrPI = cmdPersonalInfo.ExecuteReader();
+                rdrPI.Close();
+                SqlCommand test = new SqlCommand("SELECT * from personal_info", con);
+                Console.WriteLine(strCommandPersonalInfo);
+                SqlDataReader userIdReader = test.ExecuteReader();
+      
+                while (userIdReader.Read())
+                {
+                    GetUserId(userIdReader);
+                    int idd = Convert.ToInt32(userIdReader.GetValue(0));
+                }
+            userIdReader.Close();
+                SqlCommand cmdExperiences;
+                string strCommandExperiences = String.Empty;
+                for (int i = 0; i < userData.Experiences.Count; i++)
+                {
+                    var exp = userData.Experiences[i];
+                    cmdExperiences = new SqlCommand("INSERT INTO experiences([User ID], [Company Name], [Start Year], [End Year]) VALUES("
+                        + id + ", " +"'"+ exp.CompanyName+"'" + ", " + exp.StartYear + ", " + exp.EndYear + ")", con);
+                SqlDataReader rdrExperiences = cmdExperiences.ExecuteReader();
+                rdrExperiences.Close();
+                }
+                
+                
+                
+                
+                SqlCommand cmdExpectations = new SqlCommand("INSERT INTO expectations([User ID], Salary, Additional)" + 
+                    "VALUES (" + id + ", " + userData.Expectations.Salary + ", " + "'"+userData.Expectations.AdditionalExp+"'" + ")", con);
+
+            SqlDataReader rdrExpectations = cmdExpectations.ExecuteReader();
+            rdrExpectations.Close();
+                con.Close();
+
+
                 return Ok();
-            }
-            else
-            {
-                userData.UserId++;
-                data.value.Add(userData);
-                _cache.Set("userdata", data);
-                return Ok();
-            }
             
+            
+
+        }
+        public void GetUserId(IDataRecord record)
+        {
+
+            id = Convert.ToInt32(record[0]);
+           
 
         }
 
