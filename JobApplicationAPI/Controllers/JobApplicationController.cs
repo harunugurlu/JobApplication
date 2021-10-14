@@ -1,5 +1,4 @@
-﻿using System.Data.SqlClient;
-using JobApplicationAPI.Models;
+﻿using JobApplicationAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -9,13 +8,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Net;
+using System.IO;
 
 namespace JobApplicationAPI.Controllers
 {
     
     public class JobApplicationController : Controller
     {
-        
+        int id;
           
         private readonly IMemoryCache _cache;
         public JobApplicationController(ILogger<JobApplicationController> logger, IMemoryCache memoryCache)
@@ -26,11 +27,11 @@ namespace JobApplicationAPI.Controllers
         public IActionResult GetUserData()
         {
             SqlConnection con = new SqlConnection("Server=localhost; Database=JobApplicationDb; Integrated Security=true");
+            
             SqlCommand cmd = new SqlCommand("SELECT p.*, exp.[Company Name], exp.[Start Year], exp.[End Year], e.Salary, " +
                 "e.Additional from personal_info p INNER JOIN experiences exp on p.[User ID] = exp.[User ID]INNER JOIN expectations e on p.[User ID] = e.[User ID]; ", con);
             con.Open();
             SqlDataReader rdr = cmd.ExecuteReader();
-            Console.WriteLine(rdr.FieldCount);
             CacheData user = new CacheData();
             user.value = new List<UserData>();
             UserData info = new UserData();
@@ -38,16 +39,16 @@ namespace JobApplicationAPI.Controllers
             while (rdr.Read())
             {
                 ReadSingleRow(rdr, user);
-            }            
-            CacheData data = new CacheData();
-            
-            if(!_cache.TryGetValue("userdata", out data))
-            {
-                data = new CacheData();
-                return Ok(data);
             }
+
+            rdr.GetSchemaTable();
             
-            return Ok(rdr);
+            CacheData data = new CacheData();
+
+            //con.Close();
+            
+            
+            return Ok(user);
 
             
         }
@@ -62,8 +63,8 @@ namespace JobApplicationAPI.Controllers
                 values[i] = record[i].ToString();
             }
          
-            var userId = Convert.ToInt32(values[0]); 
-            var user = userData.value.FirstOrDefault(x => x.UserId == userId); 
+            var userId = Convert.ToInt32(values[0]); //User ID yi tablodan alıp bir değişkene atadık.
+            var user = userData.value.FirstOrDefault(x => x.UserId == userId); //
 
             if(user != null)
             {
@@ -83,10 +84,10 @@ namespace JobApplicationAPI.Controllers
             else
             {
                 
-                userData.value.Add(new UserData
+                userData.value.Add(new UserData //Object initializer ile nesne oluşturma esnasında property'lere değer atama
                 {
                     UserId = userId,
-                    PersonalInfo = new PersonalInfo
+                    PersonalInfo = new PersonalInfo //Object initializer ile nesne oluşturma esnasında property'lere değer atama
                     {
                         FName = values[1],
                         LName = values[2],
@@ -122,15 +123,18 @@ namespace JobApplicationAPI.Controllers
             Console.WriteLine();
         }
 
-        
+
         [HttpPost("api/post")]
         public IActionResult PostUserData([FromBody] UserData userData)
         {
             CacheData data;
 
 
+           
+
 
                 
+            
                 SqlConnection con = new SqlConnection("Server=localhost; Database=JobApplicationDb; Integrated Security=true");
                 con.Open();
                 string strCommandPersonalInfo = "INSERT INTO personal_info([First Name], [Last Name], [Birth Date])" +
@@ -184,6 +188,5 @@ namespace JobApplicationAPI.Controllers
            
 
         }
-
     }
 }
